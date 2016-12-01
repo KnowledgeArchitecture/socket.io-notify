@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function(event) {
-  var socket = io.connect(window.location.hostname + ":3000", {
+  var socket = io.connect(window.location.hostname, {
     query: 'notificationKey=NOTIFICATION_KEY'
   });
   socket.on('NOTIFICATION', function (notification) {
