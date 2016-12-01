@@ -7,7 +7,7 @@ const port = process.env.PORT || 3000;
 const notificationSecret = process.env.NOTIFICATION_SECRET || 'NOTIFICATION_SECRET';
 const notificationKey = process.env.NOTIFICATION_KEY || 'NOTIFICATION_KEY'
 const EVENTS = {
-    newNotification: 'NEW_NOTIFICATION'
+    newNotification: 'NOTIFICATION'
 };
 var server;
 
@@ -36,7 +36,7 @@ app.use(express.static(__dirname + '/public'));
 
 app.post('/send', (req, res) => {
     const data = req.body;
-    const dispath = (channel, notification) => {
+    const dispatch = (channel, notification) => {
         io.to(channel).emit(EVENTS.newNotification, data.notification);
     };
 
@@ -47,10 +47,10 @@ app.post('/send', (req, res) => {
     if (data && data.notification && data.channel) {
         if (data.channel.forEach) {
             data.channel.forEach(function (channel) {
-                dispath(channel, data.notification);
+                dispatch(channel, data.notification);
             });
         } else {
-            dispath(data.channel, data.notification);
+            dispatch(data.channel, data.notification);
         }
 
         return res.status(200).json('ok');
