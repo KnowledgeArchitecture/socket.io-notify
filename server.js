@@ -4,6 +4,8 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const port = process.env.PORT || 3000;
+const errorNotificationSecret = process.env.ERROR_NOTIFICATION_SECRET || 'ERROR_NOTIFICATION_SECRET';
+const errorNotificationKey = process.env.ERROR_NOTIFICATION_KEY || 'ERROR_NOTIFICATION_KEY';
 const notificationSecret = process.env.NOTIFICATION_SECRET || 'NOTIFICATION_SECRET';
 const notificationKey = process.env.NOTIFICATION_KEY || 'NOTIFICATION_KEY'
 const EVENTS = {
@@ -25,7 +27,7 @@ if(process.env.SSL_KEY && process.env.SSL_CERT) {
 const io = require('socket.io')(server);
 
 
-server.listen(port, () => console.log('Server listening at port %d', port));
+server.listen(port, () => console.log('Server listening at port ' + port));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
@@ -42,6 +44,10 @@ app.post('/send', (req, res) => {
 
     if (!req.headers || req.headers.notification_secret !== notificationSecret) {
         return res.status(401).json('invalid notification secret');
+    }
+
+    if (req.headers.notification_secret == errorNotificationSecret && data.channel !== "ERRORS") {
+        return res.status(401).json('invalid notification secret (error secret for non-error channel)');
     }
 
     if (data && data.notification && data.channel) {
@@ -66,7 +72,8 @@ io.on('connection', (socket) => {
     }
 
     socket.on('join', (channel) => {
-        socket.join(channel);
+		if (channel !== "ERRORS" || socket.handshake.query.notificationKey == errorNotificationKey)
+			socket.join(channel);
     });
 
     socket.on('leave', (channel) => {
@@ -76,7 +83,7 @@ io.on('connection', (socket) => {
 
 
 function validateConnection(query) {
-    if (query.notificationKey !== notificationKey) {
+    if (query.notificationKey !== notificationKey && query.notificationKey !== errorNotificationKey) {
         return;
     }
     return true;
