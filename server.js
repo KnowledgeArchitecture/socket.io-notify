@@ -26,6 +26,14 @@ if(process.env.SSL_KEY && process.env.SSL_CERT) {
 
 const io = require('socket.io')(server);
 
+//var redis = require('socket.io-redis');
+var redis = require('redis').createClient;
+var adapter = require('socket.io-redis');
+var redisport = 6380;
+var redishost = 'ka-dev.redis.cache.windows.net';
+var pub = redis(redisport, redishost, { auth_pass: "PatifmEj8EuQBuTNsc24kJQRCdtg5Mbc3SBSXF0VsJE" });
+var sub = redis(redisport, redishost, { auth_pass: "PatifmEj8EuQBuTNsc24kJQRCdtg5Mbc3SBSXF0VsJE" });
+io.adapter(adapter({ pubClient: pub, subClient: sub }));
 
 server.listen(port, () => console.log('Server listening at port ' + port));
 
