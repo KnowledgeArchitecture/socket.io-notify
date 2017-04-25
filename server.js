@@ -1,4 +1,5 @@
 var fs = require('fs');
+var redis = require('redis').createClient;
 
 const express = require('express');
 const app = express();
@@ -27,13 +28,23 @@ if(process.env.SSL_KEY && process.env.SSL_CERT) {
 const io = require('socket.io')(server);
 
 //var redis = require('socket.io-redis');
-var redis = require('redis').createClient;
-var adapter = require('socket.io-redis');
+var redisadapter = require('socket.io-redis');
 var redisport = 6380;
-var redishost = 'ka-dev.redis.cache.windows.net';
-var pub = redis(redisport, redishost, { auth_pass: "PatifmEj8EuQBuTNsc24kJQRCdtg5Mbc3SBSXF0VsJE" });
-var sub = redis(redisport, redishost, { auth_pass: "PatifmEj8EuQBuTNsc24kJQRCdtg5Mbc3SBSXF0VsJE" });
-io.adapter(adapter({ pubClient: pub, subClient: sub }));
+var redishost = process.env.REDIS_HOST;
+
+var pub = redis(redisport, redishost, { auth_pass: process.env.REDIS_AUTH_KEY, tls:{}});
+var sub = redis(redisport, redishost, { auth_pass: process.env.REDIS_AUTH_KEY, tls: {} });
+
+var adapter = redisadapter({ pubClient: pub, subClient: sub });
+adapter.pubClient.on('error', function(){
+	console.log("Pub Error");
+});
+adapter.subClient.on('error', function(){
+	console.log("Sub Error");	
+});
+
+io.adapter(adapter);
+
 
 server.listen(port, () => console.log('Server listening at port ' + port));
 
